@@ -1,0 +1,12 @@
+{
+  "name": "opengl_test",
+  "targetName": "OpenGLTest",
+  "description": "A sample dlang opengl project.",
+  "authors": ["Eric Cornelius"],
+  "homepage": "http://github.com/EricMCornelius",
+  "license": "GPL-2.0",
+  "dependencies": {
+    "derelict-gl3" : "~master",
+    "derelict-glfw3" : "~master"
+  }
+}
