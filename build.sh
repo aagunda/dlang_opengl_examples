@@ -1,1 +1,1 @@
-~/Downloads/dub --compiler=ldc2 --build=release build
+dub --compiler=ldc2 --build=debug build
