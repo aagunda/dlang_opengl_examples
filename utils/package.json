@@ -1,0 +1,11 @@
+{
+  "name": "utils",
+  "description": "opengl utility classes",
+  "authors": ["Eric Cornelius"],
+  "homepage": "http://github.com/EricMCornelius",
+  "license": "GPL-2.0",
+  "dependencies": {
+    "derelict-gl3" : "~master",
+    "derelict-glfw3" : "~master"
+  }
+}

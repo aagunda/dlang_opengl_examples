@@ -7,6 +7,10 @@
   "license": "GPL-2.0",
   "dependencies": {
     "derelict-gl3" : "~master",
-    "derelict-glfw3" : "~master"
+    "derelict-glfw3" : "~master",
+    "utils" : {
+      "path": "../utils",
+      "version": "~master"
+    }
   }
 }
