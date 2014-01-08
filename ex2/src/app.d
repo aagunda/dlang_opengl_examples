@@ -1,35 +1,29 @@
-import std.stdio, std.algorithm, std.range, std.file, std.string;
+import std.stdio, std.algorithm, std.range, std.file, std.string, std.conv;
 
 import derelict.glfw3.glfw3;
 import derelict.opengl3.gl3;
 
 import utils.shader;
+import utils.model;
 
 enum { Triangles, NumVAOs };
 enum { ArrayBuffer, NumBuffers };
-enum { vPosition = 0 };
+enum { vPosition = 0, vNormal, vColor };
 
 GLuint VAOs[NumVAOs];
 GLuint Buffers[NumBuffers];
 
-const GLuint NumVertices = 6;
+Vertex vertices[];
 
 void init() {
   glGenVertexArrays(NumVAOs, VAOs.ptr);
   glBindVertexArray(VAOs[Triangles]);
 
-  GLfloat vertices[NumVertices][2] = [
-    [ -0.90, -0.90 ],
-    [  0.85, -0.90 ],
-    [ -0.90,  0.85 ],
-    [  0.90, -0.85 ],
-    [  0.90,  0.90 ],
-    [ -0.85,  0.90 ]
-  ];
+  vertices = loadModel("model.json");
 
   glGenBuffers(NumBuffers, Buffers.ptr);
   glBindBuffer(GL_ARRAY_BUFFER, Buffers[ArrayBuffer]);
-  glBufferData(GL_ARRAY_BUFFER, vertices.sizeof, vertices.ptr, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, vertices.length * Vertex.sizeof, vertices.ptr, GL_STATIC_DRAW);
 
   ShaderInfo shaders[] = [
     { GL_VERTEX_SHADER, "triangles.vert" },
@@ -38,8 +32,13 @@ void init() {
 
   GLuint program = LoadShaders(shaders);
   glUseProgram(program);
-  glVertexAttribPointer(vPosition, 2, GL_FLOAT, GL_FALSE, 0, null);
+
   glEnableVertexAttribArray(vPosition);
+  glEnableVertexAttribArray(vColor);
+
+  glVertexAttribPointer(vPosition, 3, GL_FLOAT, GL_FALSE, Vertex.sizeof, null);
+  auto offset = 6 * float.sizeof;
+  glVertexAttribPointer(vColor, 3, GL_FLOAT, GL_FALSE, Vertex.sizeof, cast(void*)offset);
 }
 
 int main() {
@@ -65,7 +64,7 @@ int main() {
   while (!glfwWindowShouldClose(window)) {
     glClear(GL_COLOR_BUFFER_BIT);
     glBindVertexArray(VAOs[Triangles]);
-    glDrawArrays(GL_TRIANGLES, 0, NumVertices);
+    glDrawArrays(GL_TRIANGLES, 0, to!int(vertices.length));
 
     glfwSwapBuffers(window);
     glfwPollEvents();

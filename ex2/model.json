@@ -1,0 +1,22 @@
+{
+  "scene": {
+    "my_square": {
+      "object": "$s1",
+      "material": "$m1",
+      "position": [0.0, 0.0, 0.0]
+    }
+  },
+  "materials": {
+    "m1": {
+      "color": "0xff9900"
+    }
+  },
+  "objects": {
+    "s1": {
+      "type": "square"
+    },
+    "c1": {
+      "type": "circle"
+    }
+  }
+}

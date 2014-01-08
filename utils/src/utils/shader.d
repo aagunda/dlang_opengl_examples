@@ -20,11 +20,13 @@ GLuint LoadShaders(ShaderInfo[] shaders) {
     glCompileShader(shader.handle);
 
     glGetShaderiv(shader.handle, GL_COMPILE_STATUS, &res);
+    writeln(res);
     glAttachShader(program, shader.handle);
   }
 
   glLinkProgram(program);
   glGetProgramiv(program, GL_LINK_STATUS, &res);
+  writeln(res);
   return program;
 }
 
