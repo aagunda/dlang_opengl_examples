@@ -1,5 +1,7 @@
 module utils.model;
 
+import utils.shader;
+
 import std.stdio, std.algorithm, std.range, std.file, std.string, std.json, std.conv, std.math;
 
 alias float[3] Vec3;
@@ -65,6 +67,53 @@ struct Circle {
   }
 };
 
+interface Drawable {
+  void draw();
+};
+
+class Node : Drawable {
+  Drawable children[];
+
+  void draw() {
+    foreach (child; children)
+      child.draw();
+  }
+
+  void addChild(Drawable child) {
+    children ~= child;
+  }
+};
+
+class ShaderNode : Node {
+  Program program;
+
+  this() {
+
+  }
+  
+  this(Program program) {
+    this.program = program;
+  }
+
+  override void draw() {
+    writeln("Set shader program");
+    Node.draw();
+  }
+};
+
+class MeshNode : Node {
+  Mesh mesh;
+
+  this(Mesh mesh) {
+    this.mesh = mesh;
+  }
+
+  override void draw() {
+    writeln("Draw mesh");
+    Node.draw();
+  }
+};
+
 Vertex[] loadModel(string filename) {
   auto model = parseJSON(readText(filename));
 
@@ -93,11 +142,16 @@ Vertex[] loadModel(string filename) {
     }
   }
 
+  auto scene = model["scene"].object;
+
+  auto obj = new MeshNode(Mesh());
+  auto root = new ShaderNode();
+  root.addChild(obj);
+  root.draw();
+
   Vertex verts[];
   foreach (pos; c.geometry)
     verts ~= Vertex(pos, [0.0, 0.0, 1.0], [1.0, 0.0f, 1.0f]);
-
-  writeln(verts);
 
   return verts;
 }
