@@ -1,8 +1,8 @@
 {
   "scene": {
-    "my_square": {
-      "object": "$s1",
-      "material": "$m1",
+    "my_circle": {
+      "object": "c1",
+      "material": "m1",
       "position": [0.0, 0.0, 0.0]
     }
   },

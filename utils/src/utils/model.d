@@ -18,6 +18,9 @@ struct Mesh {
   Triangle triangles[];
 };
 
+alias Vec3[3] TriangleVerts;
+alias TriangleVerts[] Geometry;
+
 struct Material {
   Vec3 color;
 
@@ -33,7 +36,7 @@ struct Material {
 };
 
 struct Square {
-  Vec3 geometry[2][3] = [
+  Geometry geometry = [
     [
       [-1.0, -1.0,  0.0],
       [-1.0,  1.0,  0.0],
@@ -52,7 +55,7 @@ struct Square {
 };
 
 struct Circle {
-  Vec3 geometry[];
+  Geometry geometry;
 
   this(JSONValue def) {
     Vec3 center = [0.0, 0.0, 0.0];
@@ -114,18 +117,49 @@ class MeshNode : Node {
   }
 };
 
+Node processScene(JSONValue curr, Material[string] materials, Mesh[string] objects) {
+  auto node = new Node();
+
+  foreach (name, def; curr.object) {
+    auto obj = objects[def["object"].str];
+    auto mat = materials[def["material"].str];
+
+    foreach (tri; obj.triangles)
+      foreach (vert; tri)
+        vert.color = mat.color;
+
+    auto m = new MeshNode(obj);
+
+    /*
+    auto children = def.object.get("children", def);
+    if (def != children) {
+      writeln("okay");
+      foreach (child; children.array) {
+        m.addChild(processScene(child, materials, objects));
+      }
+    }
+    */
+
+    node.addChild(m);
+  }
+  return node;
+}
+
 Vertex[] loadModel(string filename) {
   auto model = parseJSON(readText(filename));
 
-  auto materials = model["materials"].object;
-  foreach (name, def; materials)
-    auto m = Material(def);
+  Material[string] materials;
+  Mesh[string] objects;
 
-  Circle c;
+  auto material_set = model["materials"].object;
+  foreach (name, def; material_set)
+    materials[name] = Material(def);
 
-  auto objects = model["objects"].object;
-  foreach (name, def; objects) {
+  auto object_set = model["objects"].object;
+  foreach (name, def; object_set) {
     auto type = def["type"].str;
+    Mesh mesh;
+
     switch (type) {
       case "square": {
         auto obj = Square(def);
@@ -133,25 +167,27 @@ Vertex[] loadModel(string filename) {
       }
       case "circle": {
         auto obj = Circle(def);
-        c = obj;
+
+        foreach (verts; obj.geometry) {
+          mesh.triangles ~= [
+            Vertex(verts[0], [0.0, 0.0, 1.0], [1.0, 0.0f, 1.0f]),
+            Vertex(verts[1], [0.0, 0.0, 1.0], [1.0, 0.0f, 1.0f]),
+            Vertex(verts[2], [0.0, 0.0, 1.0], [1.0, 0.0f, 1.0f])
+          ];
+        }
         break;
       }
       default: {
         writeln("Unknown object type");
       }
     }
+
+    objects[name] = mesh;
   }
 
-  auto scene = model["scene"].object;
-
-  auto obj = new MeshNode(Mesh());
-  auto root = new ShaderNode();
-  root.addChild(obj);
-  root.draw();
+  auto scene = processScene(model["scene"], materials, objects);
+  scene.draw();
 
   Vertex verts[];
-  foreach (pos; c.geometry)
-    verts ~= Vertex(pos, [0.0, 0.0, 1.0], [1.0, 0.0f, 1.0f]);
-
   return verts;
 }
