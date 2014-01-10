@@ -104,6 +104,8 @@ class ShaderNode : Node {
   }
 };
 
+Vertex[] verts;
+
 class MeshNode : Node {
   Mesh mesh;
 
@@ -113,22 +115,29 @@ class MeshNode : Node {
 
   override void draw() {
     writeln("Draw mesh");
+    foreach (tri; mesh.triangles)
+      verts ~= tri;
     Node.draw();
   }
 };
 
-Node processScene(JSONValue curr, Material[string] materials, Mesh[string] objects) {
+Node processScene(JSONValue curr, Material[string] materials, Geometry[string] objects) {
   auto node = new Node();
 
   foreach (name, def; curr.object) {
     auto obj = objects[def["object"].str];
     auto mat = materials[def["material"].str];
 
-    foreach (tri; obj.triangles)
-      foreach (vert; tri)
-        vert.color = mat.color;
+    Mesh mesh;
+    foreach (tri; obj) {
+      mesh.triangles ~= [
+        Vertex(tri[0], [0, 0, 1], mat.color),
+        Vertex(tri[1], [0, 0, 1], mat.color),
+        Vertex(tri[2], [0, 0, 1], mat.color)
+      ];
+    }
 
-    auto m = new MeshNode(obj);
+    auto m = new MeshNode(mesh);
 
     /*
     auto children = def.object.get("children", def);
@@ -149,7 +158,7 @@ Vertex[] loadModel(string filename) {
   auto model = parseJSON(readText(filename));
 
   Material[string] materials;
-  Mesh[string] objects;
+  Geometry[string] objects;
 
   auto material_set = model["materials"].object;
   foreach (name, def; material_set)
@@ -158,7 +167,6 @@ Vertex[] loadModel(string filename) {
   auto object_set = model["objects"].object;
   foreach (name, def; object_set) {
     auto type = def["type"].str;
-    Mesh mesh;
 
     switch (type) {
       case "square": {
@@ -167,27 +175,18 @@ Vertex[] loadModel(string filename) {
       }
       case "circle": {
         auto obj = Circle(def);
-
-        foreach (verts; obj.geometry) {
-          mesh.triangles ~= [
-            Vertex(verts[0], [0.0, 0.0, 1.0], [1.0, 0.0f, 1.0f]),
-            Vertex(verts[1], [0.0, 0.0, 1.0], [1.0, 0.0f, 1.0f]),
-            Vertex(verts[2], [0.0, 0.0, 1.0], [1.0, 0.0f, 1.0f])
-          ];
-        }
+        objects[name] = obj.geometry;
         break;
       }
       default: {
         writeln("Unknown object type");
       }
     }
-
-    objects[name] = mesh;
   }
 
   auto scene = processScene(model["scene"], materials, objects);
   scene.draw();
 
-  Vertex verts[];
+  //Vertex verts[];
   return verts;
 }
