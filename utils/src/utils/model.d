@@ -6,6 +6,14 @@ import std.stdio, std.algorithm, std.range, std.file, std.string, std.json, std.
 
 alias float[3] Vec3;
 
+Vec3 scale(Vec3 base, Vec3 s) {
+  return [base[0] * s[0], base[1] * s[1], base[2] * s[2]];
+}
+
+Vec3 offset(Vec3 base, Vec3 p) {
+  return [base[0] + p[0], base[1] + p[1], base[2] + p[2]];
+}
+
 struct Vertex {
   Vec3 position;
   Vec3 normal;
@@ -56,14 +64,15 @@ struct Square {
 
 struct Circle {
   Geometry geometry;
+  uint points = 200;
 
   this(JSONValue def) {
-    Vec3 center = [0.0, 0.0, 0.0];
-    Vec3 last = [1.0, 0.0, 0.0];
+    Vec3 center = [0.0, 0.0, 1.0];
+    Vec3 last = [1.0, 0.0, 1.0];
 
-    for (auto idx = 1; idx <= 100; ++idx) {
-      auto rads = 2 * PI * idx / 100;
-      Vec3 next = [cos(rads), sin(rads), 0];
+    for (auto idx = 1; idx <= points; ++idx) {
+      auto rads = 2 * PI * idx / points;
+      Vec3 next = [cos(rads), sin(rads), 1.0];
       geometry ~= [last, center, next];
       last = next;
     }
@@ -127,27 +136,30 @@ Node processScene(JSONValue curr, Material[string] materials, Geometry[string] o
   foreach (name, def; curr.object) {
     auto obj = objects[def["object"].str];
     auto mat = materials[def["material"].str];
+   
+    Vec3 scale = [1.0, 1.0, 1.0];
+    if ("scale" in def.object)
+      for (auto i = 0; i < 3; ++i)
+        scale[i] = def["scale"][i].floating;
+
+    Vec3 position = [0.0, 0.0, 0.0];
+    if ("position" in def.object)
+      for (auto i = 0; i < 3; ++i)
+        position[i] = def["position"][i].floating;
 
     Mesh mesh;
     foreach (tri; obj) {
       mesh.triangles ~= [
-        Vertex(tri[0], [0, 0, 1], mat.color),
-        Vertex(tri[1], [0, 0, 1], mat.color),
-        Vertex(tri[2], [0, 0, 1], mat.color)
+        Vertex(tri[0].scale(scale).offset(position), [0, 0, 1], mat.color),
+        Vertex(tri[1].scale(scale).offset(position), [0, 0, 1], mat.color),
+        Vertex(tri[2].scale(scale).offset(position), [0, 0, 1], mat.color)
       ];
     }
 
     auto m = new MeshNode(mesh);
 
-    /*
-    auto children = def.object.get("children", def);
-    if (def != children) {
-      writeln("okay");
-      foreach (child; children.array) {
-        m.addChild(processScene(child, materials, objects));
-      }
-    }
-    */
+    if ("children" in def.object)
+      m.addChild(processScene(def["children"], materials, objects));
 
     node.addChild(m);
   }
